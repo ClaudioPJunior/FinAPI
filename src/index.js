@@ -55,7 +55,6 @@ app.post("/account",(request,response)=>{
     cpf,
     name,
     id:  uuidv4(),
-    fund: 0,
     statement: [],
   });
 
@@ -66,6 +65,18 @@ app.post("/account",(request,response)=>{
 app.get("/statement",verifyIfExistAccountCpf,(request,response)=>{
   const { customer } = request;
   return response.json(customer.statement);
+});
+
+app.get("/statement/date",verifyIfExistAccountCpf,(request,response)=>{
+  const { customer } = request;
+  const { date } = request.query;
+
+  const dateFormat = new Date(date + " 00:00:00");
+
+  const statement = customer.statement.filter((statement) =>
+    statement.created_at.toDateString() === new Date(dateFormat).toDateString());
+
+  return response.json(statement);
 });
 
 app.get("/account",verifyIfExistAccountCpf,(request,response)=>{
@@ -85,10 +96,6 @@ app.post("/deposit",verifyIfExistAccountCpf,(request,response)=>{
   }
 
   customer.statement.push(statementOperation);
-
-  const balance = getBalance(customer.statement);
-
-  customer.fund = balance;
 
   return response.status(201).send();
 
@@ -113,10 +120,34 @@ app.post("/withdraw",verifyIfExistAccountCpf,(request,response)=>{
 
   customer.statement.push(statementOperation);
 
-  customer.fund = getBalance(customer.statement);
+  return response.status(201).send();
+
+});
+
+app.put("/account",verifyIfExistAccountCpf,(request,response)=>{
+  const { name } = request.body;
+  const { customer } = request;
+
+  customer.name = name;
 
   return response.status(201).send();
 
+});
+
+app.delete("/account",verifyIfExistAccountCpf,(request,response)=>{
+  const { customer } = request;
+
+  //splice - Remoção de dados
+
+  customers.splice(customer, 1);
+
+  return response.status(200).json(customers);
+
+});
+
+app.get("/balance",verifyIfExistAccountCpf,(request,response)=>{
+  const { customer } = request;
+  return response.json(getBalance(customer.statement));
 });
 
 app.listen(3333);
